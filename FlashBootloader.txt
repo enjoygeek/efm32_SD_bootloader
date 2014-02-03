@@ -1,0 +1,4 @@
+device EFM32GG232F1024
+loadbin exe/bootloader.bin, 0
+qc
+
