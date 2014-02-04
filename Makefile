@@ -25,6 +25,7 @@ LST_DIR = lst
 # DO NOT add trailing whitespace chars, they do matter !
 WINDOWSCS  ?= GNU Tools ARM Embedded\4.7 2012q4
 LINUXCS    ?= /home/powertomato/.software/arm-2012.03
+#LINUXCS    ?= /home/powertomato/.software/summon-arm-toolchain/sat
 SIMPSTUDIO ?= /home/powertomato/.software/energymicro_1.2
 
 RMDIRS     := rm -rf
@@ -91,9 +92,8 @@ DEPFLAGS = -MMD -MP -MF $(@:.o=.d)
 #
 # Add -Wa,-ahld=$(LST_DIR)/$(@F:.o=.lst) to CFLAGS to produce assembly list files
 #
-override CFLAGS += -D$(DEVICE) -Wall -Wextra -mcpu=cortex-m3 -mthumb \
--mfix-cortex-m3-ldrd -ffunction-sections \
--fdata-sections -fomit-frame-pointer  \
+override CFLAGS += -D$(DEVICE) -Wall -Wextra -mcpu=cortex-m3 -mthumb -mfix-cortex-m3-ldrd \
+-ffunction-sections -fdata-sections -fomit-frame-pointer -Wl,--gc-sections\
 $(DEPFLAGS)
 
 override ASMFLAGS += -x assembler-with-cpp -D$(DEVICE) -Wall -Wextra -mcpu=cortex-m3 -mthumb
@@ -101,12 +101,11 @@ override ASMFLAGS += -x assembler-with-cpp -D$(DEVICE) -Wall -Wextra -mcpu=corte
 #
 # NOTE: The -Wl,--gc-sections flag may interfere with debugging using gdb.
 #
-override LDFLAGS += -Xlinker -Map=$(LST_DIR)/$(PROJECTNAME).map -mcpu=cortex-m3 \
--mthumb -Tefm32gg.ld \
- -Wl,--gc-sections
+override LDFLAGS += -Xlinker -Map=$(LST_DIR)/$(PROJECTNAME).map -dead-strip -mcpu=cortex-m3 \
+-mthumb -Tefm32gg.ld  -Wl,--gc-sections #-nostartfiles
 
-LIBS = -Wl,--start-group -lgcc -lc -Wl,--end-group
-LIBS += -lcs3 -lcs3unhosted
+LIBS = -Wl,--start-group -Wl,--end-group
+LIBS += -lcs3 -lcs3unhosted 
 #LIBS += -lnosys
 
 INCLUDEPATHS += -Isrc \
@@ -129,32 +128,15 @@ C_SRC +=  src/autobaud.c \
 src/boot.c \
 src/bootloader.c \
 src/crc.c \
-src/debug.c \
-src/debuglock.c \
 src/flash.c \
 src/usart.c \
 src/xmodem.c \
+src/debuglock.c \
 src/system_efm32gg.c
 
+#src/debug.c \
 #src/leuart.c \
 #src/iarwrite.c \
-
-# \
-# ../../../kits/common/bsp/bsp_dk_3200.c \
-# ../../../Device/EnergyMicro/EFM32G/Source/system_efm32g.c \
-# ../../../emlib/src/em_assert.c \
-# ../../../emlib/src/em_cmu.c \
-# ../../../emlib/src/em_ebi.c \
-# ../../../emlib/src/em_emu.c \
-# ../../../emlib/src/em_gpio.c \
-# ../../../emlib/src/em_prs.c \
-# ../../../emlib/src/em_system.c \
-# ../../../emlib/src/em_timer.c \
-# ../../../emlib/src/em_usart.c \
-# ../../../reptile/fatfs/src/diskio.c \
-# ../../../reptile/fatfs/src/ff.c \
-# ../../../kits/common/drivers/microsd.c \
-# ../main.c
 
 s_SRC +=
 
@@ -181,12 +163,12 @@ vpath %.s $(S_PATHS)
 vpath %.S $(S_PATHS)
 
 # Default build is debug build
-all:      debug
+all:      release
 
 debug:    CFLAGS += -DDEBUG -O0 -g3
 debug:    $(EXE_DIR)/$(PROJECTNAME).bin
 
-release:  CFLAGS += -DNDEBUG -Os -g 
+release:  CFLAGS += -DNDEBUG -Os
 release:  $(EXE_DIR)/$(PROJECTNAME).bin
 
 # Create objects from C SRC files
