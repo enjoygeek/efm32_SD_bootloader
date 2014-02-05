@@ -53,7 +53,7 @@
 #define PIN_LOOP_INTERVAL    250
 
 /** The size of the bootloader flash image */
-#define BOOTLOADER_SIZE      4096
+#define BOOTLOADER_SIZE      (4096*3)
 
 /** USART used for communication. */
 #define BOOTLOADER_USART           USART0
