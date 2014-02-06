@@ -65,7 +65,7 @@ FATFS Fatfs;				/* File system specific */
 int8_t ramBufferRead[BUFFERSIZE];	/* Temporary buffer for read file */
 
 
-void die(void){
+__RAMFUNC_PRE __RAMFUNC_POST void die(void){
 	while(1){ }
 }
 
@@ -116,6 +116,8 @@ __RAMFUNC_PRE __RAMFUNC_POST void flash_from_sd( void )
 		}
 
 		/* TODO write to flash */
+
+		remaining -= length;
 	}
 	f_close(&fsrc);
 	f_rename( FIRMWARE_FILENAME, FIRMWARE_RENAME);
@@ -140,23 +142,6 @@ __no_init uint32_t vectorTable[47];
 uint32_t vectorTable[47] __attribute__((at(0x20000000)));
 #elif defined (__GNUC__)
 uint32_t vectorTable[47] __attribute__((aligned(512)));
-#else
-#error Undefined toolkit, need to define alignment
-#endif
-
-
-/*
- * This variable holds the computed CRC-16 of the bootloader and is used during
- * production testing to ensure the correct programming of the bootloader.
- * This can safely be omitted if you are rolling your own bootloader.
- */
-#if defined ( __ICCARM__ )
-#pragma location=0x200000bc
-__no_init uint16_t bootloaderCRC;
-#elif defined (__CC_ARM)
-uint16_t bootloaderCRC __attribute__((at(0x200000bc)));
-#elif defined (__GNUC__)
-uint16_t bootloaderCRC __attribute__((at(0x200000bc)));
 #else
 #error Undefined toolkit, need to define alignment
 #endif
@@ -256,6 +241,14 @@ void waitForBootOrUSART(void)
 		{
 			if( init_sd_card()==0 ) {
 				flash_from_sd();
+				GPIO_PinModeSet( gpioPortA, 4, gpioModePushPull,0);
+				GPIO_PinOutSet( gpioPortA, 4 );
+				die();
+			}else{
+
+				GPIO_PinModeSet( gpioPortA, 5, gpioModePushPull,0);
+				GPIO_PinOutSet( gpioPortA, 5 );
+				die();
 			}
 			deinit_sd_card();
 
@@ -300,13 +293,12 @@ void waitForBootOrUSART(void)
  * @param end
  *   The end of the block. This byte is not included in the checksum.
  *****************************************************************************/
-__RAMFUNC_PRE void verify(uint32_t start, uint32_t end) __RAMFUNC_POST;
-__RAMFUNC_PRE void verify(uint32_t start, uint32_t end)
+__RAMFUNC_PRE __RAMFUNC_POST void verify(uint32_t start, uint32_t end)
 {
 	USART_printString(crcString);
 	USART_printHex(CRC_calc((void *) start, (void *) end));
 	USART_printString(newLineString);
-}/* __RAMFUNC_POST; FIXME */
+}
 
 /**************************************************************************//**
  * @brief
@@ -315,8 +307,7 @@ __RAMFUNC_PRE void verify(uint32_t start, uint32_t end)
  *   NOTE: __ramfunc is a IAR specific instruction to put code into RAM.
  *   This allows the bootloader to survive a destructive upload.
  *****************************************************************************/
-__RAMFUNC_PRE void commandlineLoop(void) __RAMFUNC_POST;
-__RAMFUNC_PRE void commandlineLoop(void)
+__RAMFUNC_PRE __RAMFUNC_POST void commandlineLoop(void)
 {
 	uint32_t flashSize;
 	uint8_t  c;
@@ -429,7 +420,7 @@ __RAMFUNC_PRE void commandlineLoop(void)
 				USART_printString(unknownString);
 		}
 	}
-}/* __RAMFUNC_POST; FIXME */
+}
 
 /**************************************************************************//**
  * @brief  Create a new vector table in RAM.
@@ -460,13 +451,6 @@ int main(void)
 
 	/* Generate a new vector table and place it in RAM */
 	generateVectorTable();
-
-	/* Calculate CRC16 for the bootloader itself and the Device Information page. */
-	/* This is used for production testing and can safely be omitted in */
-	/* your own code. */
-	bootloaderCRC  = CRC_calc((void *) 0x0, (void *) BOOTLOADER_SIZE);
-	bootloaderCRC |= CRC_calc((void *) 0x0FE081B2, (void *) 0x0FE08200) << 16;
-	/* End safe to omit. */
 
 	/* Enable clocks for peripherals. */
 	CMU->HFPERCLKDIV = CMU_HFPERCLKDIV_HFPERCLKEN;
