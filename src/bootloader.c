@@ -48,26 +48,29 @@
 #include <stdio.h>
 #endif
 
-
 #include "em_device.h"
 #include "em_cmu.h"
 #include "em_emu.h"
+#include "em_chip.h"
 #include "em_timer.h"
 #include "ff.h"
 #include "microsd.h"
 #include "diskio.h"
 
-#define BUFFERSIZE      1024
+#define BUFFERSIZE      256
+#define MULT_OF_4(X) (!((X&1) | ((X>>1)&1)))
+#if !MULT_OF_4(BUFFERSIZE)
+#error "BUFFERSIZE must be multiple of 4"
+#endif
+
 #define FIRMWARE_FILENAME    "firm.bin"
 #define FIRMWARE_RENAME      "firm.bak"
 
 FATFS Fatfs;				/* File system specific */
-int8_t ramBufferRead[BUFFERSIZE];	/* Temporary buffer for read file */
 
+int8_t ramBufferRead[BUFFERSIZE] __attribute__ ((aligned(4)));
 
-__RAMFUNC_PRE __RAMFUNC_POST void die(void){
-	while(1){ }
-}
+static bool sd_flash = 0;
 
 __RAMFUNC_PRE __RAMFUNC_POST int init_sd_card(void){
 	DSTATUS resCard;			/* SDcard status */
@@ -96,28 +99,59 @@ __RAMFUNC_PRE __RAMFUNC_POST void deinit_sd_card(void){
 	GPIO_PinOutClear( gpioPortA, 8 );
 }
 
+__RAMFUNC_PRE __RAMFUNC_POST bool sd_flash_file_exists() {
+	FIL fsrc;		/* File objects */
+	FRESULT res;	/* FatFs function common result code */
+
+	res = f_open(&fsrc, FIRMWARE_FILENAME, FA_OPEN_EXISTING | FA_READ);
+	if( res != FR_OK ){
+		return 0;
+	}
+	f_close(&fsrc);
+	return 1;
+}
+
 __RAMFUNC_PRE __RAMFUNC_POST void flash_from_sd( void )
 {
 	FIL fsrc;		/* File objects */
 	FRESULT res;	/* FatFs function common result code */
 	UINT br;	/* File read/write count */
 
-	res = f_open(&fsrc, FIRMWARE_FILENAME, FA_READ );
+	res = f_open(&fsrc, FIRMWARE_FILENAME,  FA_OPEN_EXISTING | FA_READ );
 	if( res != FR_OK ){
 		return;
 	}
-	int remaining = f_size(&fsrc);
-	while( remaining > 0 ){
-		int length = (remaining >= BUFFERSIZE) ? (BUFFERSIZE) : (remaining);
+	int num_bytes = f_size(&fsrc);
+	void* addr;
+
+	/* Flash erase */
+	for (addr = (void*)BOOTLOADER_SIZE; addr < (void*)(BOOTLOADER_SIZE+num_bytes); addr += flashPageSize)
+	{
+		FLASH_eraseOneBlock((int)addr);
+	}
+
+	addr = (void*)BOOTLOADER_SIZE;
+	while( num_bytes > 0 ){
+		int length = (num_bytes >= BUFFERSIZE) ? (BUFFERSIZE) : (num_bytes);
+	
 		res = f_read(&fsrc, ramBufferRead, length, &br);
+
 		if( res != FR_OK ){
 			f_close(&fsrc);
 			return;
 		}
+		if( length % 4!=0 ){
+			/* file is not 32bit aligned, a correct linker should ensure this */
+			length += 4-(length%4);
+		}
 
-		/* TODO write to flash */
+		FLASH_writeBlock( addr, 0, length, (void*)ramBufferRead);
+		while (DMA->CHENS & DMA_CHENS_CH0ENS) ;
 
-		remaining -= length;
+		GPIO_PinOutToggle( gpioPortA, 4 );
+		GPIO_PinOutToggle( gpioPortA, 5 );
+		num_bytes -= length;
+		addr += length;
 	}
 	f_close(&fsrc);
 	f_rename( FIRMWARE_FILENAME, FIRMWARE_RENAME);
@@ -239,18 +273,10 @@ void waitForBootOrUSART(void)
 		/* Check if pins are not asserted, if not check if there is a firmware file on the SD */
 		if (SWDpins != 0x1) 
 		{
-			if( init_sd_card()==0 ) {
-				flash_from_sd();
-				GPIO_PinModeSet( gpioPortA, 4, gpioModePushPull,0);
-				GPIO_PinOutSet( gpioPortA, 4 );
-				die();
-			}else{
-
-				GPIO_PinModeSet( gpioPortA, 5, gpioModePushPull,0);
-				GPIO_PinOutSet( gpioPortA, 5 );
-				die();
+			if( init_sd_card()==0 && sd_flash_file_exists() ) {
+				sd_flash = true;
+				return;
 			}
-			deinit_sd_card();
 
 			if (BOOT_checkFirmwareIsValid()) 
 			{
@@ -447,10 +473,11 @@ int main(void)
 
 	/* Handle potential chip errata */
 	/* Uncomment the next line to enable chip erratas for engineering samples */
-	/* CHIP_init(); */
+	/* CHIP_Init(); */
 
 	/* Generate a new vector table and place it in RAM */
 	generateVectorTable();
+	//__asm__("bkpt $0x55\n");
 
 	/* Enable clocks for peripherals. */
 	CMU->HFPERCLKDIV = CMU_HFPERCLKDIV_HFPERCLKEN;
@@ -477,6 +504,10 @@ int main(void)
 
 	/* Wait for a boot operation */
 	waitForBootOrUSART();
+	if( sd_flash ){
+		/* Disable timeout */
+		NVIC_DisableIRQ(RTC_IRQn);
+	}
 
 #ifdef BOOTLOADER_LEUART_CLOCK
 	/* Enable LEUART */
@@ -498,6 +529,26 @@ int main(void)
 	/* Calculate new clock division based on the 28Mhz clock */
 	DEBUG_USART->CLKDIV = 3634;
 #endif
+
+	/* Initialize flash for writing */
+	FLASH_init();
+
+	if( sd_flash ){
+		/* asd */
+		GPIO->P[ gpioPortA ].DOUT  |= (1 << 4) | (1 << 5);
+		GPIO->P[ gpioPortA ].MODEL |= GPIO_P_MODEL_MODE4_PUSHPULL;
+		GPIO->P[ gpioPortA ].MODEL |= GPIO_P_MODEL_MODE5_PUSHPULL;
+
+		GPIO->P[ gpioPortA ].DOUTSET = 1 << 5; /* PA5->high */
+		GPIO->P[ gpioPortA ].DOUTCLR = 1 << 4; /* PA4->low */
+		flash_from_sd();
+
+		/* Boot application */
+#ifndef NDEBUG
+		printf("Booting application \r\n");
+#endif
+		BOOT_boot();
+	}
 
 	/* Setup pins for USART */
 	CONFIG_UsartGpioSetup();
@@ -546,8 +597,6 @@ int main(void)
 	USART_printHex(  DEVINFO->UNIQUEL);
 	USART_printString( (uint8_t*) "\r\n");
 
-	/* Initialize flash for writing */
-	FLASH_init();
 
 	/* Start executing command line */
 	commandlineLoop();

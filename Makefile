@@ -3,7 +3,7 @@
 ####################################################################
 
 .SUFFIXES:				# ignore builtin rules
-.PHONY: all debug release clean
+.PHONY: all debug release clean gdb_server gdb flash
 
 ####################################################################
 # Definitions                                                      #
@@ -27,7 +27,6 @@ WINDOWSCS  ?= GNU Tools ARM Embedded\4.7 2012q4
 LINUXCS    ?= /home/powertomato/.software/arm-2012.03
 #LINUXCS    ?= /home/powertomato/.software/summon-arm-toolchain/sat
 SIMPSTUDIO ?= /home/powertomato/.software/energymicro_1.2
-
 RMDIRS     := rm -rf
 RMFILES    := rm -rf
 ALLFILES   := /*.*
@@ -79,6 +78,10 @@ LD      = $(QUOTE)$(TOOLDIR)/bin/arm-none-eabi-ld$(QUOTE)
 AR      = $(QUOTE)$(TOOLDIR)/bin/arm-none-eabi-ar$(QUOTE)
 OBJCOPY = $(QUOTE)$(TOOLDIR)/bin/arm-none-eabi-objcopy$(QUOTE)
 DUMP    = $(QUOTE)$(TOOLDIR)/bin/arm-none-eabi-objdump$(QUOTE)
+GDB     = $(QUOTE)$(TOOLDIR)/bin/arm-none-eabi-gdb$(QUOTE) -ex "tar rem :2331"
+
+GDB_SERVER := ~/.software/JLink_Linux_V480_x86_64/JLinkGDBServer -if SWD -speed 100
+FLASH      := ~/.software/JLink_Linux_V480_x86_64/JLinkExe ./FlashBootloader.txt
 
 ####################################################################
 # Flags                                                            #
@@ -174,8 +177,15 @@ all:      release
 debug:    CFLAGS += -DDEBUG -O0 -g3
 debug:    $(EXE_DIR)/$(PROJECTNAME).bin
 
-release:  CFLAGS += -DNDEBUG -Os
+release:  CFLAGS += -DNDEBUG -Os -g3
 release:  $(EXE_DIR)/$(PROJECTNAME).bin
+
+gdb_server:
+	$(GDB_SERVER)
+gdb:
+	$(GDB) $(EXE_DIR)/$(PROJECTNAME).out
+flash:
+	$(FLASH)
 
 # Create objects from C SRC files
 $(OBJ_DIR)/%.o: %.c

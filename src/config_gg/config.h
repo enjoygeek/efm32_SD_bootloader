@@ -47,7 +47,7 @@
 #define USE_AUTO_BAUD 1
 
 /** Number of seconds before autobaud times out and restarts the bootloader */
-#define AUTOBAUD_TIMEOUT     30
+#define AUTOBAUD_TIMEOUT     5
 
 /** Number of milliseconds between each consecutive polling of the SWD pins */
 #define PIN_LOOP_INTERVAL    250
