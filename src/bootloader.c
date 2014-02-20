@@ -165,7 +165,7 @@ DWORD get_fattime(void)
 
 
 /** Version string, used when the user connects */
-#define BOOTLOADER_VERSION_STRING "1.63 "
+#define BOOTLOADER_VERSION_STRING "sd0.01 "
 
 /* Vector table in RAM. We construct a new vector table to conserve space in
  * flash as it is sparsly populated. */
