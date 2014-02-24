@@ -167,7 +167,7 @@ DWORD get_fattime(void)
 
 
 /** Version string, used when the user connects */
-#define BOOTLOADER_VERSION_STRING "sd"COMPILE_DATE" "
+#define BOOTLOADER_VERSION_STRING "sd_"COMPILE_DATE" "
 
 /* Vector table in RAM. We construct a new vector table to conserve space in
  * flash as it is sparsly populated. */
@@ -363,17 +363,17 @@ __RAMFUNC_PRE __RAMFUNC_POST void commandlineLoop(void)
 				USART_printString(readyString);
 				XMODEM_download(BOOTLOADER_SIZE, flashSize);
 				break;
-				/* Destructive upload command */
+			/* Destructive upload command */
 			case 'd':
 				USART_printString(readyString);
 				XMODEM_download(0, flashSize);
 				break;
-				/* Write to user page */
+			/* Write to user page */
 			case 't':
 				USART_printString(readyString);
 				XMODEM_download(XMODEM_USER_PAGE_START, XMODEM_USER_PAGE_END);
 				break;
-				/* Write to lock bits */
+			/* Write to lock bits */
 			case 'p':
 				DEBUGLOCK_startDebugInterface();
 				USART_printString(readyString);
@@ -385,11 +385,11 @@ __RAMFUNC_PRE __RAMFUNC_POST void commandlineLoop(void)
 #endif
 				XMODEM_download(XMODEM_LOCK_PAGE_START, XMODEM_LOCK_PAGE_END);
 				break;
-				/* Boot into new program */
+			/* Boot into new program */
 			case 'b':
 				BOOT_boot();
 				break;
-				/* Debug lock */
+			/* Debug lock */
 			case 'l':
 #ifndef NDEBUG
 				/* We check if there is a debug session active in DHCSR. If there is we
@@ -556,7 +556,12 @@ int main(void)
 	CONFIG_UsartGpioSetup();
 
 	/* AUTOBAUD_sync() returns a value in 24.8 fixed point format */
+
+#if USE_AUTO_BAUD==1
 	periodTime24_8 = AUTOBAUD_sync();
+#else
+	periodTime24_8 = BAUD_PERIOD;
+#endif
 #ifndef NDEBUG
 	printf("Autobaud complete.\r\n");
 	printf("Measured periodtime (24.8): %d.%d\r\n", periodTime24_8 >> 8, periodTime24_8 & 0xFF);

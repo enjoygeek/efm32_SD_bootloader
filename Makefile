@@ -3,7 +3,7 @@
 ####################################################################
 
 .SUFFIXES:				# ignore builtin rules
-.PHONY: all debug release clean gdb_server gdb flash src/compile_date.h
+.PHONY: all debug release clean gdb_server gdb flash verify src/compile_date.h
 
 ####################################################################
 # Definitions                                                      #
@@ -80,8 +80,9 @@ OBJCOPY = $(QUOTE)$(TOOLDIR)/bin/arm-none-eabi-objcopy$(QUOTE)
 DUMP    = $(QUOTE)$(TOOLDIR)/bin/arm-none-eabi-objdump$(QUOTE)
 GDB     = $(QUOTE)$(TOOLDIR)/bin/arm-none-eabi-gdb$(QUOTE) -ex "tar rem :2331"
 
-GDB_SERVER := ~/.software/JLink_Linux_V480_x86_64/JLinkGDBServer -if SWD -speed 100
+GDB_SERVER := ~/.software/JLink_Linux_V480_x86_64/JLinkGDBServer -if SWD -speed 50
 FLASH      := ~/.software/JLink_Linux_V480_x86_64/JLinkExe ./FlashBootloader.txt
+VERIFY      := ~/.software/JLink_Linux_V480_x86_64/JLinkExe ./VerifyBootloader.txt
 
 ####################################################################
 # Flags                                                            #
@@ -188,6 +189,10 @@ gdb:
 	$(GDB) $(EXE_DIR)/$(PROJECTNAME).out
 flash:
 	$(FLASH)
+	@echo "" #JLinkExe has exit code 1 if a script exits with qc *sigh*
+verify:
+	$(VERIFY)
+	@echo "" #JLinkExe has exit code 1 if a script exits with qc *sigh*
 
 src/compile_date.h:
 	@echo "#define COMPILE_DATE "\"`date +%Y-%m-%d`\" > src/compile_date.h

@@ -38,13 +38,13 @@
 
 #include "em_device.h"
 
-#define NDEBUG 1
-
 /** Frequency of the LF clock */
 #define LFRCO_FREQ           (32768)
 
 /** Enable/Disable autobaud setting */
-#define USE_AUTO_BAUD 1
+#define USE_AUTO_BAUD 0
+/** If the autobaud is disabled this value is used to set the baudrate */
+#define BAUD_PERIOD                0x0000F2C0 /*115200*/
 
 /** Number of seconds before autobaud times out and restarts the bootloader */
 #define AUTOBAUD_TIMEOUT     5
@@ -53,14 +53,13 @@
 #define PIN_LOOP_INTERVAL    250
 
 /** The size of the bootloader flash image */
-#define BOOTLOADER_SIZE      (4096*3)
+#define BOOTLOADER_SIZE      (0x1000*3)
 
 /** USART used for communication. */
 #define BOOTLOADER_USART           USART0
 #define BOOTLOADER_USART_CLOCK     CMU_HFPERCLKEN0_USART0
 #define BOOTLOADER_USART_LOCATION  USART_ROUTE_LOCATION_LOC0
 
-#ifdef USE_AUTO_BAUD
 /** TIMER1 is used for autobaud. The channel and location must match the
  * RX line of BOOTLOADER_USART for this to work properly. */
 #define AUTOBAUD_TIMER             TIMER1
@@ -68,7 +67,6 @@
 #define AUTOBAUD_TIMER_LOCATION    TIMER_ROUTE_LOCATION_LOC1
 #define AUTOBAUD_TIMER_IRQn        TIMER1_IRQn
 #define AUTOBAUD_TIMER_CLOCK       CMU_HFPERCLKEN0_TIMER1
-#endif 
 
 /** USART used for debugging. */
 #define DEBUG_USART                UART1

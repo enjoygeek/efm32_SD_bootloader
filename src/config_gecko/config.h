@@ -41,14 +41,19 @@
 /** Frequency of the LF clock */
 #define LFRCO_FREQ           (32768)
 
+/** Enable/Disable autobaud setting */
+#define USE_AUTO_BAUD 1
+/** If the autobaud is disabled this value is used to set the baudrate */
+#define BAUD_PERIOD                0x0000F2C0 /*115200*/
+
 /** Number of seconds before autobaud times out and restarts the bootloader */
-#define AUTOBAUD_TIMEOUT     30
+#define AUTOBAUD_TIMEOUT     5
 
 /** Number of milliseconds between each consecutive polling of the SWD pins */
 #define PIN_LOOP_INTERVAL    250
 
 /** The size of the bootloader flash image */
-#define BOOTLOADER_SIZE      0x800
+#define BOOTLOADER_SIZE      (0x800*6)
 
 /** USART used for communication. */
 #define BOOTLOADER_USART           USART0
