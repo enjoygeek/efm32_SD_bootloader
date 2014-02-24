@@ -3,7 +3,7 @@
 ####################################################################
 
 .SUFFIXES:				# ignore builtin rules
-.PHONY: all debug release clean gdb_server gdb flash
+.PHONY: all debug release clean gdb_server gdb flash src/compile_date.h
 
 ####################################################################
 # Definitions                                                      #
@@ -175,10 +175,12 @@ vpath %.S $(S_PATHS)
 all:      release
 
 debug:    CFLAGS += -DDEBUG -O0 -g3
-debug:    $(EXE_DIR)/$(PROJECTNAME).bin
+debug:    src/compile_date.h $(EXE_DIR)/$(PROJECTNAME).bin
+	@rm -rf src/compile_date.h
 
-release:  CFLAGS += -DNDEBUG -Os -g3
-release:  $(EXE_DIR)/$(PROJECTNAME).bin
+release:  CFLAGS += -DNDEBUG -Os -g3 
+release:  src/compile_date.h $(EXE_DIR)/$(PROJECTNAME).bin
+	@rm -rf src/compile_date.h
 
 gdb_server:
 	$(GDB_SERVER)
@@ -186,6 +188,9 @@ gdb:
 	$(GDB) $(EXE_DIR)/$(PROJECTNAME).out
 flash:
 	$(FLASH)
+
+src/compile_date.h:
+	@echo "#define COMPILE_DATE "\"`date +%Y-%m-%d`\" > src/compile_date.h
 
 # Create objects from C SRC files
 $(OBJ_DIR)/%.o: %.c

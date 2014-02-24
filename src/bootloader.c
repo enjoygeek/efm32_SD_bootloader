@@ -57,6 +57,8 @@
 #include "microsd.h"
 #include "diskio.h"
 
+#include "compile_date.h"
+
 #define BUFFERSIZE      256
 #define MULT_OF_4(X) (!((X&1) | ((X>>1)&1)))
 #if !MULT_OF_4(BUFFERSIZE)
@@ -165,7 +167,7 @@ DWORD get_fattime(void)
 
 
 /** Version string, used when the user connects */
-#define BOOTLOADER_VERSION_STRING "sd0.01 "
+#define BOOTLOADER_VERSION_STRING "sd"COMPILE_DATE" "
 
 /* Vector table in RAM. We construct a new vector table to conserve space in
  * flash as it is sparsly populated. */
