@@ -24,9 +24,12 @@ LST_DIR = lst
 # Change path to the tools according to your system configuration
 # DO NOT add trailing whitespace chars, they do matter !
 WINDOWSCS  ?= GNU Tools ARM Embedded\4.7 2012q4
-LINUXCS    ?= /home/powertomato/.software/arm-2012.03
-#LINUXCS    ?= /home/powertomato/.software/summon-arm-toolchain/sat
-SIMPSTUDIO ?= /home/powertomato/.software/energymicro_1.2
+LINUXCS    ?= $(HOME)/.software/arm-2012.03
+#LINUXCS    ?= $(HOME)/.software/summon-arm-toolchain/sat
+#LINUXCS    ?= $(HOME)/.software/gcc-arm-none-eabi-4_8-2013q4
+#LINUXCS    ?= $(HOME)/.software/gcc-arm-none-eabi-4_7-2013q3
+
+SIMPSTUDIO ?= $(HOME)/.software/energymicro_1.2
 RMDIRS     := rm -rf
 RMFILES    := rm -rf
 ALLFILES   := /*.*
@@ -80,9 +83,10 @@ OBJCOPY = $(QUOTE)$(TOOLDIR)/bin/arm-none-eabi-objcopy$(QUOTE)
 DUMP    = $(QUOTE)$(TOOLDIR)/bin/arm-none-eabi-objdump$(QUOTE)
 GDB     = $(QUOTE)$(TOOLDIR)/bin/arm-none-eabi-gdb$(QUOTE) -ex "tar rem :2331"
 
-GDB_SERVER := ~/.software/JLink_Linux_V480_x86_64/JLinkGDBServer -if SWD -speed 50
-FLASH      := ~/.software/JLink_Linux_V480_x86_64/JLinkExe ./FlashBootloader.txt
-VERIFY      := ~/.software/JLink_Linux_V480_x86_64/JLinkExe ./VerifyBootloader.txt
+JLINKPATH  := $(HOME)/.software/JLink_Linux_V480e_i386
+GDB_SERVER := $(JLINKPATH)/JLinkGDBServer -if SWD -speed 50
+FLASH      := $(JLINKPATH)/JLinkExe ./FlashBootloader.txt
+VERIFY     := $(JLINKPATH)/JLinkExe ./VerifyBootloader.txt
 
 ####################################################################
 # Flags                                                            #
@@ -119,9 +123,13 @@ INCLUDEPATHS += -Isrc \
 -I$(SIMPSTUDIO)/emlib/inc \
 -I$(SIMPSTUDIO)/reptile/fatfs/inc \
 -I$(SIMPSTUDIO)/kits/common/bsp \
--I$(SIMPSTUDIO)/kits/common/drivers
-
-# -I$(SIMPSTUDIO)/kits/EFM32_Gxxx_DK/config
+-I$(SIMPSTUDIO)/kits/common/drivers \
+-I./src/sdconfig/lopoboard/
+#-I$(SIMPSTUDIO)/EFM32GG_DK3750/config/microsdconfig.h
+#-I$(SIMPSTUDIO)/EFM32G_DK3550/config/microsdconfig.h
+#-I$(SIMPSTUDIO)/EFM32LG_DK3650/config/microsdconfig.h
+#-I$(SIMPSTUDIO)/EFM32WG_DK3850/config/microsdconfig.h
+#-I$(SIMPSTUDIO)/EFM32_Gxxx_DK/config/microsdconfig.h
 
 ####################################################################
 # Files                                                            #
