@@ -106,6 +106,7 @@ __RAMFUNC_PRE void BOOT_boot(void)
   RTC->CTRL  = _RTC_CTRL_RESETVALUE;
   RTC->COMP0 = _RTC_COMP0_RESETVALUE;
   RTC->IEN   = _RTC_IEN_RESETVALUE;
+  NVIC_DisableIRQ(RTC_IRQn);
   /* Reset GPIO settings */
   GPIO->P[5].MODEL = _GPIO_P_MODEL_RESETVALUE;
   /* Disable RTC clock */
