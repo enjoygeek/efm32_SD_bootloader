@@ -40,6 +40,7 @@
 #include "boot.h"
 #include "compiler.h"
 #include "config.h"
+#include "sd.h"
 
 #ifndef NDEBUG
 bool printedPC = false;
@@ -125,6 +126,8 @@ __RAMFUNC_PRE void BOOT_boot(void)
   /* Read new SP and PC from vector table */
   sp = *((uint32_t *) BOOTLOADER_SIZE);
   pc = *((uint32_t *) BOOTLOADER_SIZE + 1);
+
+  deinit_sd_card();
 
   BOOT_jump(sp, pc);
 }// __RAMFUNC_POST; FIXME

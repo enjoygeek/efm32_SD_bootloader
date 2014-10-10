@@ -37,6 +37,7 @@
 #include "usart.h"
 #include "xmodem.h"
 #include "boot.h"
+#include "sd.h"
 #include "debuglock.h"
 #include "autobaud.h"
 #include "crc.h"
