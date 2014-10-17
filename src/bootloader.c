@@ -136,7 +136,7 @@ __RAMFUNC_PRE __RAMFUNC_POST void flash_from_sd( void )
 	addr = (void*)BOOTLOADER_SIZE;
 	while( num_bytes > 0 ){
 		int length = (num_bytes >= BUFFERSIZE) ? (BUFFERSIZE) : (num_bytes);
-	
+
 		res = f_read(&fsrc, ramBufferRead, length, &br);
 
 		if( res != FR_OK ){
@@ -157,9 +157,11 @@ __RAMFUNC_PRE __RAMFUNC_POST void flash_from_sd( void )
 		addr += length;
 	}
 	f_close(&fsrc);
-	f_rename( FIRMWARE_FILENAME, FIRMWARE_RENAME);
+
+	f_unlink( FIRMWARE_RENAME );
+	f_rename( FIRMWARE_FILENAME, FIRMWARE_RENAME );
 }
-	
+
 DWORD get_fattime(void)
 {
 	return (28 << 25) | (2 << 21) | (1 << 16);
@@ -274,14 +276,14 @@ void waitForBootOrUSART(void)
 		}
 #endif
 		/* Check if pins are not asserted, if not check if there is a firmware file on the SD */
-		if (SWDpins != 0x1) 
+		if (SWDpins != 0x1)
 		{
 			if( init_sd_card()==0 && sd_flash_file_exists() ) {
 				sd_flash = true;
 				return;
 			}
 
-			if (BOOT_checkFirmwareIsValid()) 
+			if (BOOT_checkFirmwareIsValid())
 			{
 				/* Boot application */
 #ifndef NDEBUG

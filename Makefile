@@ -118,10 +118,10 @@ LIBS += -lcs3 -lcs3unhosted
 
 INCLUDEPATHS += -Isrc \
 -Isrc/config_gg \
+-Isrc/fatfs/inc \
 -I$(SIMPSTUDIO)/CMSIS/Include \
 -I$(SIMPSTUDIO)/Device/EnergyMicro/EFM32GG/Include \
 -I$(SIMPSTUDIO)/emlib/inc \
--I$(SIMPSTUDIO)/reptile/fatfs/inc \
 -I$(SIMPSTUDIO)/kits/common/bsp \
 -I$(SIMPSTUDIO)/kits/common/drivers \
 -I./src/sdconfig/lopoboard/
@@ -145,9 +145,9 @@ src/usart.c \
 src/xmodem.c \
 src/debuglock.c \
 src/system_efm32gg.c \
-$(SIMPSTUDIO)/reptile/fatfs/src/ff.c \
-$(SIMPSTUDIO)/reptile/fatfs/src/diskio.c \
-$(SIMPSTUDIO)/kits/common/drivers/microsd.c \
+src/fatfs/src/ff.c \
+src/fatfs/src/diskio.c \
+src/microsd.c \
 $(SIMPSTUDIO)/emlib/src/em_cmu.c \
 $(SIMPSTUDIO)/emlib/src/em_gpio.c \
 $(SIMPSTUDIO)/emlib/src/em_usart.c 
